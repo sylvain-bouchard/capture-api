@@ -1,0 +1,15 @@
+@host = http://localhost:3000
+
+###
+
+GET {{host}} HTTP/1.1
+content-type: text/plain; charset=utf-8
+
+###
+
+POST {{host}}/users HTTP/1.1
+content-type: application/json
+
+{
+    "username": "sylvainb"
+}
