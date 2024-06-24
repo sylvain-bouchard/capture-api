@@ -17,4 +17,6 @@ WORKDIR /usr/local/bin
 
 COPY --from=builder /app/target/release/capture-api .
 
+EXPOSE 3000
+
 CMD ["./capture-api"]
