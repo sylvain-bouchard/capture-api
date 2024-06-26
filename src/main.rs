@@ -4,12 +4,19 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use gstreamer as gst;
+use gstreamer::prelude::GstBinExtManual;
 use serde::{Deserialize, Serialize};
 
 #[tokio::main]
 async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
+
+    match create_stream_pipeline() {
+        Ok(()) => println!("Pipeline created successfully"),
+        Err(err) => eprintln!("Failed to create pipeline: {}", err),
+    }
 
     // build our application with a route
     let app = Router::new()
@@ -19,11 +26,24 @@ async fn main() {
         .route("/users", post(create_user));
 
     // run our app with hyper
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+}
+
+fn create_stream_pipeline() -> Result<(), gst::glib::error::BoolError> {
+    gst::init().unwrap();
+
+    // Create the GStreamer elements
+    let pipeline = gst::Pipeline::new();
+    let source = gst::ElementFactory::make("avfvideosrc").build()?;
+    let convert = gst::ElementFactory::make("videoconvert").build()?;
+    let sink = gst::ElementFactory::make("autovideosink").build()?;
+
+    pipeline.add_many(&[&source, &convert, &sink])?;
+    gst::Element::link_many(&[source, convert, sink])?;
+
+    Ok(())
 }
 
 // basic handler that responds with a static string
