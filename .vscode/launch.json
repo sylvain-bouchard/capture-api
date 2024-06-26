@@ -10,7 +10,10 @@
       "request": "launch",
       "program": "${workspaceRoot}/target/debug/capture-api",
       "args": [],
-      "cwd": "${workspaceRoot}"
+      "cwd": "${workspaceRoot}",
+      "env": {
+        "DYLD_LIBRARY_PATH": "/Library/Frameworks/GStreamer.framework/Libraries"
+      }
     }
   ]
 }
