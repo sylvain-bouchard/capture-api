@@ -5,7 +5,10 @@ use axum::{
     Json, Router,
 };
 use gstreamer as gst;
-use gstreamer::prelude::GstBinExtManual;
+use gstreamer::prelude::Cast;
+use gstreamer::prelude::ElementExt;
+use gstreamer::prelude::GstObjectExt;
+
 use serde::{Deserialize, Serialize};
 
 #[tokio::main]
@@ -31,17 +34,39 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-fn create_stream_pipeline() -> Result<(), gst::glib::error::BoolError> {
+fn create_stream_pipeline() -> Result<(), gst::glib::error::Error> {
     gst::init().unwrap();
 
-    // Create the GStreamer elements
-    let pipeline = gst::Pipeline::new();
-    let source = gst::ElementFactory::make("avfvideosrc").build()?;
-    let convert = gst::ElementFactory::make("videoconvert").build()?;
-    let sink = gst::ElementFactory::make("autovideosink").build()?;
+    let pipeline = gst::parse::launch(&format!(
+        "avfvideosrc ! videoconvert ! queue ! x264enc ! mp4mux ! filesink location=recording.mp4"
+    ))?
+    .downcast::<gst::Pipeline>()
+    .expect("type error");
 
-    pipeline.add_many(&[&source, &convert, &sink])?;
-    gst::Element::link_many(&[source, convert, sink])?;
+    pipeline
+        .set_state(gst::State::Playing)
+        .expect("Unable to set the pipeline to the `Playing` state");
+
+    for msg in pipeline.bus().unwrap().iter_timed(gst::ClockTime::NONE) {
+        use gst::MessageView;
+
+        match msg.view() {
+            MessageView::Eos(..) => break,
+            MessageView::Error(err) => {
+                panic!(
+                    "Error from {:?}: {} ({:?})",
+                    err.src().map(|s| s.path_string()),
+                    err.error(),
+                    err.debug()
+                );
+            }
+            _ => (),
+        }
+    }
+
+    pipeline
+        .set_state(gst::State::Null)
+        .expect("Unable to set the pipeline to the `Null` state");
 
     Ok(())
 }
