@@ -12,7 +12,8 @@
       "args": [],
       "cwd": "${workspaceRoot}",
       "env": {
-        "DYLD_LIBRARY_PATH": "/Library/Frameworks/GStreamer.framework/Libraries"
+        "DYLD_LIBRARY_PATH": "/Library/Frameworks/GStreamer.framework/Libraries",
+        "GST_DEBUG": "6"
       }
     }
   ]
