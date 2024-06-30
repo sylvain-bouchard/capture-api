@@ -1,8 +1,5 @@
 use axum::{
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
+    extract::Path, http::StatusCode, response::{Html, IntoResponse}, routing::{get_service, post}, Json, Router
 };
 use gstreamer as gst;
 use gstreamer::prelude::Cast;
@@ -11,6 +8,7 @@ use gstreamer::prelude::ElementExtManual;
 use gstreamer::prelude::GstObjectExt;
 
 use serde::{Deserialize, Serialize};
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
@@ -24,15 +22,23 @@ async fn main() {
 
     // build our application with a route
     let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
-        // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+        .merge(routes_users())
+        .fallback_service(routes_static());
 
     // run our app with hyper
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+}
+
+fn routes_users() -> Router {
+	Router::new()
+		.route("/users/:name", post(handle_get_user))
+        .route("/users", post(handle_create_user))
+}
+
+fn routes_static() -> Router {
+    Router::new().nest_service("/", get_service(ServeDir::new("./")))
 }
 
 fn create_stream_pipeline() -> Result<(), gst::glib::error::Error> {
@@ -77,17 +83,15 @@ fn create_stream_pipeline() -> Result<(), gst::glib::error::Error> {
     Ok(())
 }
 
-// basic handler that responds with a static string
-async fn root() -> &'static str {
-    "Hello, World!"
+async fn handle_get_user(Path(name): Path<String>) -> impl IntoResponse {
+	println!("->> {:<12} - handler_hello2 - {name:?}", "HANDLER");
+
+	Html(format!("Hello2 <strong>{name}</strong>"))
 }
 
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
+async fn handle_create_user(
     Json(payload): Json<CreateUser>,
 ) -> impl IntoResponse {
-    // insert your application logic here
     let user = User {
         id: 1337,
         username: payload.username,
@@ -99,13 +103,13 @@ async fn create_user(
 }
 
 // the input to our `create_user` handler
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct CreateUser {
     username: String,
 }
 
 // the output to our `create_user` handler
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct User {
     id: u64,
     username: String,
