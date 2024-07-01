@@ -1,6 +1,7 @@
 use axum::{
     extract::Path, http::StatusCode, response::{Html, IntoResponse}, routing::{get_service, post}, Json, Router
 };
+use configuration::load_config;
 use gstreamer as gst;
 use gstreamer::prelude::Cast;
 use gstreamer::prelude::ElementExt;
@@ -10,23 +11,26 @@ use gstreamer::prelude::GstObjectExt;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
+mod configuration;
+
 #[tokio::main]
 async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
+
+    let app_configuration = load_config().unwrap();
 
     match create_stream_pipeline() {
         Ok(()) => println!("Pipeline created successfully"),
         Err(err) => eprintln!("Failed to create pipeline: {}", err),
     }
 
-    // build our application with a route
     let app = Router::new()
         .merge(routes_users())
         .fallback_service(routes_static());
 
-    // run our app with hyper
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let address = format!("{}:{}", app_configuration.api.local_ip, app_configuration.api.port);
+    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }
