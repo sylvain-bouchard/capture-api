@@ -14,7 +14,11 @@ use gstreamer::prelude::GstObjectExt;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
+pub use self::error::{Error};
+
 mod configuration;
+mod error;
+mod web;
 
 #[tokio::main]
 async fn main() {
