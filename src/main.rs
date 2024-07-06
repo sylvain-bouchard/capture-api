@@ -7,7 +7,8 @@ pub use self::error::Error;
 mod capture;
 mod configuration;
 mod error;
-mod web;
+mod models;
+mod routes;
 
 #[tokio::main]
 async fn main() {
@@ -22,7 +23,7 @@ async fn main() {
     // }
 
     let app = Router::new()
-        .merge(web::users::routes())
+        .merge(routes::users::routes())
         .layer(middleware::map_response(main_response_mapper))
         .fallback_service(routes_static());
 
