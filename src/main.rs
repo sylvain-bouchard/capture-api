@@ -1,20 +1,13 @@
-use axum::{
-    extract::Path,
-    http::StatusCode,
-    response::{Html, IntoResponse},
-    routing::{get_service, post},
-    Json, Router,
-};
+use axum::{routing::get_service, Router};
 use configuration::load_config;
 use gstreamer as gst;
 use gstreamer::prelude::Cast;
 use gstreamer::prelude::ElementExt;
 use gstreamer::prelude::ElementExtManual;
 use gstreamer::prelude::GstObjectExt;
-use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
-pub use self::error::{Error};
+pub use self::error::Error;
 
 mod configuration;
 mod error;
@@ -33,7 +26,7 @@ async fn main() {
     }
 
     let app = Router::new()
-        .merge(routes_users())
+        .merge(web::users::routes())
         .fallback_service(routes_static());
 
     let address = format!(
@@ -43,12 +36,6 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
-}
-
-fn routes_users() -> Router {
-    Router::new()
-        .route("/users/:name", post(handle_get_user))
-        .route("/users", post(handle_create_user))
 }
 
 fn routes_static() -> Router {
@@ -95,34 +82,4 @@ fn create_stream_pipeline() -> Result<(), gst::glib::error::Error> {
         .expect("Unable to set the pipeline to the `Null` state");
 
     Ok(())
-}
-
-async fn handle_get_user(Path(name): Path<String>) -> impl IntoResponse {
-    println!("->> {:<12} - handler_hello2 - {name:?}", "HANDLER");
-
-    Html(format!("Hello2 <strong>{name}</strong>"))
-}
-
-async fn handle_create_user(Json(payload): Json<CreateUser>) -> impl IntoResponse {
-    let user = User {
-        id: 1337,
-        username: payload.username,
-    };
-
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
-}
-
-// the input to our `create_user` handler
-#[derive(Deserialize, Debug)]
-struct CreateUser {
-    username: String,
-}
-
-// the output to our `create_user` handler
-#[derive(Serialize, Debug)]
-struct User {
-    id: u64,
-    username: String,
 }
