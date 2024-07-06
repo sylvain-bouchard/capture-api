@@ -2,14 +2,14 @@ use axum::{
     extract::Path,
     http::StatusCode,
     response::{Html, IntoResponse},
-    routing::post,
+    routing::{get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/users/:name", post(handle_get_user))
+        .route("/users/:name", get(handle_get_user))
         .route("/users", post(handle_create_user))
 }
 
