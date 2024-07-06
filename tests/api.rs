@@ -1,10 +1,27 @@
 use anyhow::Result;
+use serde_json::json;
 
 #[tokio::test]
-async fn test_users_endpoint() -> Result<()> {
+async fn test_create_user() -> Result<()> {
     let client = httpc_test::new_client("http://localhost:3000")?;
 
-    client.do_get("/users").await?;
+    let create_user_request = client.do_post(
+        "/users",
+        json!({
+            "username": "sylvainb"
+        }),
+    );
+    create_user_request.await?.print().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_read_user() -> Result<()> {
+    let client = httpc_test::new_client("http://localhost:3000")?;
+
+    let read_user_request = client.do_get("sylvainb");
+    read_user_request.await?.print().await?;
 
     Ok(())
 }
