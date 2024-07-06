@@ -5,24 +5,13 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
+
+use crate::models::user::{User, UserForCreate};
 
 pub fn routes() -> Router {
     Router::new()
         .route("/users/:name", get(handle_get_user))
         .route("/users", post(handle_create_user))
-}
-
-#[derive(Deserialize, Debug)]
-struct CreateUser {
-    username: String,
-}
-
-// the output to our `create_user` handler
-#[derive(Serialize, Debug)]
-struct User {
-    id: u64,
-    username: String,
 }
 
 async fn handle_get_user(Path(name): Path<String>) -> impl IntoResponse {
@@ -31,7 +20,7 @@ async fn handle_get_user(Path(name): Path<String>) -> impl IntoResponse {
     Html(format!("Hello2 <strong>{name}</strong>"))
 }
 
-async fn handle_create_user(Json(payload): Json<CreateUser>) -> impl IntoResponse {
+async fn handle_create_user(Json(payload): Json<UserForCreate>) -> impl IntoResponse {
     let user = User {
         id: 1337,
         username: payload.username,
