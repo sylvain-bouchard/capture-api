@@ -1,17 +1,16 @@
-use axum::{middleware, response::Response, routing::get_service, Router};
+use axum::{http::Error, middleware, response::Response, routing::get_service, Router};
 use configuration::load_config;
+use controllers::user_controller::UserController;
 use tower_http::services::ServeDir;
 
-pub use self::error::Error;
-
-mod capture;
 mod configuration;
-mod error;
+mod controllers;
 mod models;
 mod routes;
+mod stream;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
@@ -22,8 +21,11 @@ async fn main() {
     //     Err(err) => eprintln!("Failed to create pipeline: {}", err),
     // }
 
+    // Initialize model controllers
+    let user_controller = UserController::new().await.unwrap();
+
     let app = Router::new()
-        .merge(routes::users::routes())
+        .nest("/api", routes::users::routes(user_controller.clone()))
         .layer(middleware::map_response(main_response_mapper))
         .fallback_service(routes_static());
 
@@ -34,6 +36,8 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+
+    Ok(())
 }
 
 fn routes_static() -> Router {
