@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-axum = "0.7.5"
+axum = { version = "0.7.5", features = ["macros"] }
 config = "0.14.0"
 ctrlc = "3.4.4"
 dotenv = "0.15.0"
