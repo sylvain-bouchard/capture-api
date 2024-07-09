@@ -1,6 +1,5 @@
 use axum::{
     extract::{Path, State},
-    response::{Html, IntoResponse},
     routing::{delete, post},
     Json, Router,
 };
@@ -15,15 +14,18 @@ pub fn routes(controller: UserController) -> Router {
         .route("/users", post(handle_create_user).get(handle_list_users))
         .route(
             "/users/:id",
-            delete(handle_delete_user).get(handle_get_user),
+            delete(handle_delete_user).get(handle_read_user),
         )
         .with_state(controller)
 }
 
-async fn handle_get_user(Path(name): Path<String>) -> impl IntoResponse {
-    println!("->> {:<12} - handler_hello2 - {name:?}", "HANDLER");
+async fn handle_read_user(
+    State(controller): State<UserController>,
+    Path(id): Path<u64>,
+) -> Result<Json<User>, UserControllerError> {
+    let user = controller.read_user(id).await?;
 
-    Html(format!("Hello2 <strong>{name}</strong>"))
+    Ok(Json(user))
 }
 
 async fn handle_create_user(
