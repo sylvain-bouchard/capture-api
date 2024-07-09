@@ -55,6 +55,14 @@ impl UserController {
         Ok(user)
     }
 
+    pub async fn read_user(&self, id: u64) -> Result<User, UserControllerError> {
+        let store = self.user_store.lock().unwrap();
+
+        let user = store.get(id as usize).unwrap().clone();
+
+        user.ok_or(UserControllerError::UserNotFound(id))
+    }
+
     pub async fn list_users(&self) -> Result<Vec<User>, UserControllerError> {
         let store = self.user_store.lock().unwrap();
 
