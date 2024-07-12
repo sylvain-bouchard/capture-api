@@ -20,8 +20,18 @@ async fn test_create_user() -> Result<()> {
 async fn test_read_user() -> Result<()> {
     let client = httpc_test::new_client("http://localhost:3000")?;
 
-    let read_user_request = client.do_get("/api/users");
+    let read_user_request = client.do_get("/api/users/sylvainb");
     read_user_request.await?.print().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_list_users() -> Result<()> {
+    let client = httpc_test::new_client("http://localhost:3000")?;
+
+    let list_users_request = client.do_get("/api/users");
+    list_users_request.await?.print().await?;
 
     Ok(())
 }
