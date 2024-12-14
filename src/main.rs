@@ -44,8 +44,8 @@ async fn main() -> Result<(), Error> {
 
     let user_service = UserService::new().await.unwrap();
 
-    let app = ApiRouter::new()
-        .nest_api_service("/users", user_routes::routes(user_service.clone()))
+    let application = ApiRouter::new()
+        .nest_api_service("/api/users", user_routes::routes(user_service.clone()))
         .finish_api_with(&mut api, api_docs)
         .layer(middleware::map_response(main_response_mapper))
         .layer(Extension(Arc::new(api)))
