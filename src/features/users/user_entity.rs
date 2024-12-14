@@ -1,9 +1,4 @@
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Debug)]
-pub struct UserForCreate {
-    pub username: String,
-}
+use serde::Serialize;
 
 // the output to our `create_user` handler
 #[derive(Clone, Serialize, Debug)]

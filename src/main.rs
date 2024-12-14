@@ -1,12 +1,11 @@
 use axum::{http::Error, middleware, response::Response, routing::get_service, Router};
 use configuration::load_config;
-use controllers::user_controller::UserController;
 use tower_http::services::ServeDir;
 
+use crate::features::users::{user_routes, user_service::UserService};
+
 mod configuration;
-mod controllers;
-mod models;
-mod routes;
+mod features;
 mod stream;
 
 #[tokio::main]
@@ -21,11 +20,10 @@ async fn main() -> Result<(), Error> {
     //     Err(err) => eprintln!("Failed to create pipeline: {}", err),
     // }
 
-    // Initialize model controllers
-    let user_controller = UserController::new().await.unwrap();
+    let user_service = UserService::new().await.unwrap();
 
     let app = Router::new()
-        .nest("/api", routes::users::routes(user_controller.clone()))
+        .nest("/api", user_routes::routes(user_service.clone()))
         .layer(middleware::map_response(main_response_mapper))
         .fallback_service(routes_static());
 
