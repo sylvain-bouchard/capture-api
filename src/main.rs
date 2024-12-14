@@ -56,8 +56,13 @@ async fn main() -> Result<(), Error> {
         app_configuration.api.local_ip, app_configuration.api.port
     );
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
+    let local_address = listener.local_addr().unwrap();
+
+    println!("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    println!("API listening on {local_address}");
+    println!("API docs are accessible at {local_address}/docs");
+
+    axum::serve(listener, application).await.unwrap();
 
     Ok(())
 }
