@@ -15,6 +15,17 @@
         "DYLD_LIBRARY_PATH": "/Library/Frameworks/GStreamer.framework/Libraries",
         "GST_DEBUG": "6"
       }
+},
+    {
+      "name": "Debug Rust Tests",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/deps/api-b0c1a3a546116155",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
     }
   ]
 }
