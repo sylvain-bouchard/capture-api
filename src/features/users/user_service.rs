@@ -20,10 +20,10 @@ pub struct UserService {
 }
 
 impl UserService {
-    pub async fn new() -> Result<Self, UserServiceError> {
-        Ok(Self {
+    pub fn new() -> Self {
+        Self {
             user_store: Arc::new(Mutex::new(Vec::new())),
-        })
+        }
     }
 
     pub async fn create_user(&self, user_dto: UserDto) -> Result<User, UserServiceError> {
