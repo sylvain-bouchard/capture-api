@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{application_name} listening on {local_address}");
     println!("API docs are accessible at {local_address}/docs");
 
-    axum::serve(listener, application).await?;
+    axum::serve(listener, application.build_router()).await?;
 
     Ok(())
 }

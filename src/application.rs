@@ -37,7 +37,7 @@ impl Application {
     }
 
     /// Builds the application.
-    pub fn build(&self) -> Router {
+    pub fn build_router(&self) -> Router {
         // Setup error handling for aide (OpenAPI generation)
         aide::gen::on_error(|error| {
             println!("{error}");
