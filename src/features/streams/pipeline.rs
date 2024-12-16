@@ -1,17 +1,14 @@
 use gstreamer as gst;
-use gstreamer::prelude::Cast;
 use gstreamer::prelude::ElementExt;
 use gstreamer::prelude::ElementExtManual;
 use gstreamer::prelude::GstObjectExt;
 
 pub fn create_stream_pipeline() -> Result<(), gst::glib::error::Error> {
-    gst::init().unwrap();
+    gst::init()?;
 
     let pipeline = gst::parse::launch(&format!(
       "avfvideosrc ! videoconvert ! queue ! x264enc ! mp4mux ! filesink location=output/recording.mp4"
-  ))?
-  .downcast::<gst::Pipeline>()
-  .expect("type error");
+    ))?;
 
     pipeline
         .set_state(gst::State::Playing)
