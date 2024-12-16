@@ -33,4 +33,4 @@ uuid = { version = "1.11.0", features = ["serde", "v4"] }
 
 [dev-dependencies]
 anyhow = "=1.0.86"
-grillon = "0.6.0"
+axum-test = "16.4.1"
