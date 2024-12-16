@@ -19,7 +19,7 @@ use crate::{
 
 pub struct Application {
     pub name: String,
-    configuration: Option<AppConfiguration>,
+    pub configuration: Option<AppConfiguration>,
 }
 
 impl Application {
