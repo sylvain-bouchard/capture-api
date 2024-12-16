@@ -3,5 +3,6 @@ local_ip = '0.0.0.0'
 port = 3000
 
 [media]
+enabled = false
 recording_duration = 20
 output_folder = 'output'

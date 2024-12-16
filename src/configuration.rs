@@ -21,7 +21,8 @@ pub struct ApiConfiguration {
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct MediaConfiguration {
-    recording_duration: u16,
+    pub enabled: bool,
+    pub recording_duration: u16,
 }
 
 pub fn load_config() -> Result<AppConfiguration, ConfigError> {
