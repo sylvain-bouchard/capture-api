@@ -18,6 +18,7 @@ use crate::{
 };
 
 pub struct Application {
+    pub name: String,
     configuration: Option<AppConfiguration>,
 }
 
@@ -25,6 +26,7 @@ impl Application {
     /// Creates a new `Application` instance.
     pub fn new() -> Self {
         Self {
+            name: String::from("Capture API"),
             configuration: None,
         }
     }
