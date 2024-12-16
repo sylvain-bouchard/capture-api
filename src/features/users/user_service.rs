@@ -29,7 +29,7 @@ impl UserService {
     pub async fn create_user(&self, user_dto: UserDto) -> Result<User, UserServiceError> {
         let mut store = self.user_store.lock().unwrap();
 
-        let id = store.len() as u64;
+        let id = user_dto.id.unwrap_or_else(|| store.len() as u64);
         let user = User {
             id,
             username: user_dto.username,
