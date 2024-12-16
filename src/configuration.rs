@@ -2,7 +2,7 @@ use config::{Config, ConfigError, Environment, File};
 use dotenv::dotenv;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]
 pub struct AppConfiguration {
     pub debug: Option<bool>,
@@ -10,7 +10,7 @@ pub struct AppConfiguration {
     pub media: MediaConfiguration,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]
 pub struct ApiConfiguration {
     pub local_ip: String,
@@ -18,7 +18,7 @@ pub struct ApiConfiguration {
     pub port: u16,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]
 pub struct MediaConfiguration {
     pub enabled: bool,
@@ -38,9 +38,6 @@ pub fn load_config() -> Result<AppConfiguration, ConfigError> {
 
     // Deserialize the configuration into the AppConfig struct
     let app_config: AppConfiguration = configuration.try_deserialize()?;
-
-    println!("API configuration: {:?}:{:?}", app_config.api.local_ip, app_config.api.port);
-    println!("Media configuration: {:?}", app_config.media.recording_duration);
 
     Ok(app_config)
 }
