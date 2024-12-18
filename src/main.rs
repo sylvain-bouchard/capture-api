@@ -16,8 +16,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let configuration = load_config()?;
 
-    let application = Application::new()
-        .with_configuration(&configuration);
+    let application = Application::new(&configuration).initialize_state().await?;
 
     // Handle any one-time setup like pipelines
     if configuration.media.enabled {

@@ -1,39 +1,50 @@
 use std::sync::Arc;
 
-use aide::{
-    axum::ApiRouter,
-    openapi::{OpenApi, Tag},
-    transform::TransformOpenApi,
-};
-use axum::{
-    http::StatusCode, middleware, response::Response, routing::get_service, Extension, Json, Router,
-};
+use aide::axum::ApiRouter;
+use aide::openapi::OpenApi;
+use aide::{openapi::Tag, transform::TransformOpenApi};
+use axum::{http::StatusCode, response::Response, routing::get_service, Json, Router};
+use axum::{middleware, Extension};
+use sea_orm::{Database, DatabaseConnection};
 use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 use crate::configuration::AppConfiguration;
-use crate::{
-    errors::ApplicationError,
-    features::users::{user_routes, user_service::UserService},
-};
+use crate::errors::ApplicationError;
+use crate::features::users::user_routes;
+use crate::features::users::user_service::UserService;
+
+pub struct ApplicationState {
+    connection: Arc<DatabaseConnection>,
+}
 
 pub struct Application {
     pub name: String,
-    pub configuration: Option<AppConfiguration>,
+    pub configuration: AppConfiguration,
+    pub state: Option<ApplicationState>,
 }
 
 impl Application {
     /// Creates a new `Application` instance.
-    pub fn new() -> Self {
+    pub fn new(configuration: &AppConfiguration) -> Self {
         Self {
             name: String::from("Capture API"),
-            configuration: None,
+            configuration: configuration.clone(),
+            state: None,
         }
     }
 
-    pub fn with_configuration(mut self, configuration: &AppConfiguration) -> Self {
-        self.configuration = Some(configuration.clone());
-        self
+    /// Initializes the database connection and populates the application state
+    pub async fn initialize_state(mut self) -> Result<Self, Box<dyn std::error::Error>> {
+        let database_uri = self.configuration.data_source.get_connection_string();
+
+        let connection = Database::connect(&database_uri).await?;
+
+        self.state = Some(ApplicationState {
+            connection: Arc::new(connection),
+        });
+
+        Ok(self)
     }
 
     /// Builds the application.
