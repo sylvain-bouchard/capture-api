@@ -9,7 +9,7 @@ pub struct AppConfiguration {
     pub debug: Option<bool>,
     pub api: ApiConfiguration,
     pub media: MediaConfiguration,
-    pub data_source: DataSourceConfiguration,
+    pub datasource: DataSourceConfiguration,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -66,7 +66,7 @@ pub fn load_config() -> Result<AppConfiguration, ConfigError> {
         .add_source(File::with_name("configuration/default.toml"))
         // Add in settings from the environment (with a prefix of APP)
         // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
-        .add_source(Environment::with_prefix("app"))
+        .add_source(Environment::with_prefix("app").separator("_"))
         .build()
         .unwrap();
 
