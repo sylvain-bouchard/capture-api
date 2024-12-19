@@ -7,8 +7,9 @@ enabled = false
 recording_duration = 20
 output_folder = 'output'
 
-[data_source]
+[datasource]
 enabled = true
 type = 'postgres'
 host = 'localhost'
 port = 5432
+database = 'capture'

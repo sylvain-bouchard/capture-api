@@ -29,11 +29,13 @@ pub struct MediaConfiguration {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct DataSourceConfiguration {
+    pub enabled: bool,
+    pub r#type: String,
     pub host: String,
     pub port: u16,
-    pub user: String,
-    pub password: String,
     pub database: String,
+    pub username: String,
+    pub password: String,
 }
 
 impl DataSourceConfiguration {
