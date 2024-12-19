@@ -14,6 +14,7 @@ use crate::errors::ApplicationError;
 use crate::features::users::user_routes;
 use crate::features::users::user_service::UserService;
 
+#[derive(Clone)]
 pub struct ApplicationState {
     connection: Arc<DatabaseConnection>,
 }
@@ -64,7 +65,8 @@ impl Application {
             .finish_api_with(&mut api, api_docs)
             .layer(middleware::map_response(main_response_mapper))
             .layer(Extension(Arc::new(api)))
-            .fallback_service(routes_static());
+            .fallback_service(routes_static())
+            .with_state(self.state.clone());
 
         router
     }
