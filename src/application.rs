@@ -36,13 +36,14 @@ impl Application {
 
     /// Initializes the database connection and populates the application state
     pub async fn initialize_state(mut self) -> Result<Self, Box<dyn std::error::Error>> {
-        let database_uri = self.configuration.data_source.get_connection_string();
+        if self.configuration.datasource.enabled {
+            let database_uri = self.configuration.datasource.get_connection_string();
+            let connection = Database::connect(&database_uri).await?;
 
-        let connection = Database::connect(&database_uri).await?;
-
-        self.state = Some(ApplicationState {
-            connection: Arc::new(connection),
-        });
+            self.state = Some(ApplicationState {
+                connection: Arc::new(connection),
+            });
+        }
 
         Ok(self)
     }
