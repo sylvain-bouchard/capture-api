@@ -1,5 +1,5 @@
 use config::{Config, ConfigError, Environment, File};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use sea_orm::ConnectOptions;
 use serde::Deserialize;
 

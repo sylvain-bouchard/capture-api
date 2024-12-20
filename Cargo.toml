@@ -19,7 +19,7 @@ axum-jsonschema = { version = "0.8.0", features = [
 ] }
 config = "0.14.0"
 ctrlc = "3.4.4"
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 gstreamer = "0.22.6"
 migration = { path = "migration" }
 schemars = { version = "0.8.21", features = ["uuid1"] }
