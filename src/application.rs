@@ -5,6 +5,7 @@ use aide::openapi::OpenApi;
 use aide::{openapi::Tag, transform::TransformOpenApi};
 use axum::{http::StatusCode, response::Response, routing::get_service, Json, Router};
 use axum::{middleware, Extension};
+use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::services::ServeDir;
 use uuid::Uuid;
@@ -40,6 +41,9 @@ impl Application {
         if self.configuration.datasource.enabled {
             let database_uri = self.configuration.datasource.get_connection_string();
             let connection = Database::connect(&database_uri).await?;
+
+            // Apply pending migrations
+            Migrator::up(&connection, None).await?;
 
             self.state = Some(ApplicationState {
                 connection: Arc::new(connection),
