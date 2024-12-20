@@ -9,8 +9,6 @@ pub struct Model {
     pub id: u64,
     pub username: String,
     pub password_hash: String,
-    #[sea_orm(column_type = "Text")]
-    pub text: String,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
