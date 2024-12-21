@@ -14,25 +14,29 @@ use crate::configuration::AppConfiguration;
 use crate::errors::ApplicationError;
 use crate::features::users::user_routes;
 use crate::features::users::user_service::UserService;
+use crate::service::{ServiceProvider, ServiceType};
 
 #[derive(Clone)]
 pub struct ApplicationState {
-    connection: Arc<DatabaseConnection>,
+    pub connection: Option<Arc<DatabaseConnection>>,
+    pub service_provider: Arc<ServiceProvider>,
 }
 
 pub struct Application {
     pub name: String,
-    pub configuration: AppConfiguration,
-    pub state: Option<ApplicationState>,
+    configuration: AppConfiguration,
+    state: ApplicationState,
 }
 
 impl Application {
-    /// Creates a new `Application` instance.
     pub fn new(configuration: &AppConfiguration) -> Self {
         Self {
             name: String::from("Capture API"),
             configuration: configuration.clone(),
-            state: None,
+            state: ApplicationState {
+                connection: None,
+                service_provider: Arc::new(ServiceProvider::new()),
+            },
         }
     }
 
@@ -45,9 +49,10 @@ impl Application {
             // Apply pending migrations
             Migrator::up(&connection, None).await?;
 
-            self.state = Some(ApplicationState {
-                connection: Arc::new(connection),
-            });
+            self.state = ApplicationState {
+                connection: Some(Arc::new(connection)),
+                service_provider: Arc::new(ServiceProvider::new()),
+            };
         }
 
         Ok(self)
@@ -62,15 +67,16 @@ impl Application {
         aide::gen::extract_schemas(true);
         let mut api = OpenApi::default();
 
-        let user_service = UserService::new();
+        self.state
+            .service_provider
+            .add_service(ServiceType::UserService(UserService::new()));
 
         let router = ApiRouter::new()
-            .nest_api_service("/api/users", user_routes::routes(user_service.clone()))
+            .nest_api_service("/api/users", user_routes::routes(self.state.clone()))
             .finish_api_with(&mut api, api_docs)
             .layer(middleware::map_response(main_response_mapper))
             .layer(Extension(Arc::new(api)))
-            .fallback_service(routes_static())
-            .with_state(self.state.clone());
+            .fallback_service(routes_static());
 
         router
     }

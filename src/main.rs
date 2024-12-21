@@ -8,6 +8,7 @@ mod application;
 mod configuration;
 mod errors;
 mod features;
+mod service;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

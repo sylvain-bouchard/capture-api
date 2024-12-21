@@ -12,6 +12,8 @@ use axum::{
     Json,
 };
 
+use crate::{application::ApplicationState, service::ServiceType};
+
 use super::{
     user_dto::{get_user_dto, UserDto},
     user_service::{UserService, UserServiceError},
@@ -30,7 +32,12 @@ impl IntoResponse for UserServiceError {
     }
 }
 
-pub fn routes(service: UserService) -> ApiRouter {
+pub fn routes(state: ApplicationState) -> ApiRouter {
+    let user_service = match state.service_provider.get_service("UserService") {
+        Some(ServiceType::UserService(user_service)) => user_service,
+        None => panic!("UserService not found in ServiceProvider"),
+    };
+
     ApiRouter::new()
         .api_route(
             "/",
@@ -42,7 +49,7 @@ pub fn routes(service: UserService) -> ApiRouter {
             get_with(handle_read_user, handle_read_user_docs)
                 .delete_with(handle_delete_user, handle_delete_user_docs),
         )
-        .with_state(service)
+        .with_state(user_service)
 }
 
 async fn handle_create_user(

@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
+use crate::service::Service;
+
 use super::{user_dto::UserDto, user_entity::User};
 
 #[derive(Debug, Error)]
@@ -16,12 +18,20 @@ pub enum UserServiceError {
 
 #[derive(Clone)]
 pub struct UserService {
+    pub name: String,
     user_store: Arc<Mutex<Vec<User>>>,
+}
+
+impl Service for UserService {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
 }
 
 impl UserService {
     pub fn new() -> Self {
         Self {
+            name: String::from("UserService"),
             user_store: Arc::new(Mutex::new(Vec::new())),
         }
     }
