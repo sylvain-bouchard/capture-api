@@ -12,6 +12,7 @@ aide = { version = "0.13.4", features = [
     "axum-extra",
     "macros",
 ] }
+argon2 = "0.5.3"
 axum = { version = "0.7.5", features = ["macros"] }
 axum-extra = "0.9.6"
 axum-jsonschema = { version = "0.8.0", features = [
