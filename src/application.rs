@@ -18,7 +18,7 @@ use crate::service::{ServiceProvider, ServiceType};
 
 #[derive(Clone)]
 pub struct ApplicationState {
-    pub connection: Option<Arc<DatabaseConnection>>,
+    connection: Option<Arc<DatabaseConnection>>,
     pub service_provider: Arc<ServiceProvider>,
 }
 
@@ -69,7 +69,9 @@ impl Application {
 
         self.state
             .service_provider
-            .add_service(ServiceType::UserService(UserService::new()));
+            .add_service(ServiceType::UserService(UserService::new(
+                self.state.connection.clone(),
+            )));
 
         let router = ApiRouter::new()
             .nest_api_service("/api/users", user_routes::routes(self.state.clone()))
