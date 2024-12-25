@@ -11,7 +11,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(User::Table)
                     .if_not_exists()
-                    .col(pk_auto(User::Id))
+                    .col(ColumnDef::new(User::Id).uuid().not_null().primary_key())
                     .col(ColumnDef::new(User::Username).string().not_null())
                     .col(ColumnDef::new(User::PasswordHash).string().not_null())
                     .col(timestamp(User::CreatedAt).default(Expr::current_timestamp()))
