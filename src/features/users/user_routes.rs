@@ -11,11 +11,12 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use serde_json::json;
 
 use crate::{application::ApplicationState, service::ServiceType};
 
 use super::{
-    user_dto::{get_user_dto, UserDto},
+    user_dto::{get_user_dto, get_user_from_dto, UserCreateDto, UserDto},
     user_service::{UserService, UserServiceError},
 };
 
@@ -54,9 +55,24 @@ pub fn routes(state: ApplicationState) -> ApiRouter {
 
 async fn handle_create_user(
     State(service): State<UserService>,
-    Json(user): Json<UserDto>,
+    Json(user_dto): Json<UserCreateDto>,
 ) -> impl IntoApiResponse {
-    match service.create_user(user).await {
+    let hashed_password = match crypto_utils::hash_password(&user_dto.password) {
+        Ok(hash) => hash,
+        Err(_) => {
+            eprintln!("Error hashing password");
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "Invalid input", "message": "Password hashing failed" })),
+            )
+                .into_response();
+        }
+    };
+
+    match service
+        .create_db_user(get_user_from_dto(user_dto, hashed_password))
+        .await
+    {
         Ok(created_user) => {
             let user_dto = get_user_dto(created_user);
             (StatusCode::CREATED, Json(user_dto)).into_response()
@@ -113,4 +129,21 @@ async fn handle_delete_user(
 fn handle_delete_user_docs(op: TransformOperation) -> TransformOperation {
     op.description("Delete the specified User.")
         .response::<204, Json<Vec<UserDto>>>()
+}
+
+pub mod crypto_utils {
+    use argon2::{
+        self,
+        password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+        Argon2,
+    };
+
+    pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
+        let salt = SaltString::generate(&mut OsRng);
+        let argon2 = Argon2::default();
+
+        let hashed_password = argon2.hash_password(password.as_bytes(), &salt)?;
+
+        Ok(hashed_password.to_string())
+    }
 }

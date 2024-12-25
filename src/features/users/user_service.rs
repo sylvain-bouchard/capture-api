@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use crate::service::Service;
 
-use super::{user_dto::UserDto, user_entity::User};
+use super::{user_entity::User, user_record::ActiveModel};
 
 #[derive(Debug, Error)]
 pub enum UserServiceError {
@@ -36,17 +36,29 @@ impl UserService {
         }
     }
 
-    pub async fn create_user(&self, user_dto: UserDto) -> Result<User, UserServiceError> {
-        let mut store = self.user_store.lock().unwrap();
+    pub async fn create_db_user(&self, user: User) -> Result<User, UserServiceError> {
+        if let Some(conn) = &self.connection {
+            let new_user = ActiveModel {
+                id: Set(user.id),
+                username: Set(user.username),
+                password_hash: Set(user.password_hash),
+                created_at: NotSet,
+                updated_at: NotSet,
+            };
 
-        let id = user_dto.id.unwrap_or_else(|| store.len() as u64);
-        let user = User {
-            id,
-            username: user_dto.username,
-        };
-        store.push(user.clone());
+            let inserted_user = new_user
+                .insert(conn.as_ref())
+                .await
+                .map_err(|err| UserServiceError::DatabaseError(err.to_string()))?;
 
-        Ok(user)
+            Ok(User {
+                id: inserted_user.id,
+                username: inserted_user.username,
+                password_hash: inserted_user.password_hash,
+            })
+        } else {
+            Err(UserServiceError::InternalServerError)
+        }
     }
 
     pub async fn read_user(&self, id: u64) -> Result<User, UserServiceError> {
