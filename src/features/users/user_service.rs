@@ -1,3 +1,4 @@
+use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, Set};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
@@ -21,6 +22,7 @@ pub enum UserServiceError {
 #[derive(Clone)]
 pub struct UserService {
     pub name: String,
+    connection: Option<Arc<DatabaseConnection>>,
     user_store: Arc<Mutex<Vec<User>>>,
 }
 
@@ -31,9 +33,10 @@ impl Service for UserService {
 }
 
 impl UserService {
-    pub fn new() -> Self {
+    pub fn new(connection: Option<Arc<DatabaseConnection>>) -> Self {
         Self {
             name: String::from("UserService"),
+            connection,
             user_store: Arc::new(Mutex::new(Vec::new())),
         }
     }
