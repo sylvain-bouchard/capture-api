@@ -14,6 +14,8 @@ pub enum UserServiceError {
     InternalServerError,
     #[error("Lock poisoned")]
     LockPoisoned,
+    #[error("Database error")]
+    DatabaseError(String),
 }
 
 #[derive(Clone)]

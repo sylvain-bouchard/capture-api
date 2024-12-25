@@ -26,6 +26,7 @@ impl IntoResponse for UserServiceError {
             UserServiceError::UserNotFound(_) => StatusCode::NOT_FOUND,
             UserServiceError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             UserServiceError::LockPoisoned => StatusCode::INTERNAL_SERVER_ERROR,
+            UserServiceError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         let body = axum::Json(serde_json::json!({ "error": self.to_string() }));
