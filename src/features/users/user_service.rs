@@ -51,10 +51,10 @@ impl UserService {
                 updated_at: NotSet,
             };
 
-            let inserted_user = new_user
-                .insert(conn.as_ref())
-                .await
-                .map_err(|err| UserServiceError::DatabaseError(err.to_string()))?;
+            let inserted_user = new_user.insert(conn.as_ref()).await.map_err(|err| {
+                println!("A database error occurred: {}", err.to_string());
+                UserServiceError::DatabaseError(err.to_string())
+            })?;
 
             Ok(User {
                 id: inserted_user.id,
