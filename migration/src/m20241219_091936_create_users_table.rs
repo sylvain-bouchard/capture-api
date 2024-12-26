@@ -14,8 +14,14 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(User::Id).uuid().not_null().primary_key())
                     .col(ColumnDef::new(User::Username).string().not_null())
                     .col(ColumnDef::new(User::PasswordHash).string().not_null())
-                    .col(timestamp(User::CreatedAt).default(Expr::current_timestamp()))
-                    .col(timestamp(User::UpdatedAt).default(Expr::current_timestamp()))
+                    .col(
+                        timestamp_with_time_zone(User::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        timestamp_with_time_zone(User::UpdatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
                     .to_owned(),
             )
             .await?;
