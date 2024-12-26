@@ -18,6 +18,18 @@ impl MigrationTrait for Migration {
                     .col(timestamp(User::UpdatedAt).default(Expr::current_timestamp()))
                     .to_owned(),
             )
+            .await?;
+
+        // Create a unique constraint on the username column
+        manager
+            .create_index(
+                sea_query::Index::create()
+                    .name("idx-unique-username")
+                    .table(User::Table)
+                    .col(User::Username)
+                    .unique()
+                    .to_owned(),
+            )
             .await
     }
 
