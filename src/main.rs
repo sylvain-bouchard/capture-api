@@ -6,7 +6,6 @@ use features::streams::pipeline::create_stream_pipeline;
 
 mod application;
 mod configuration;
-mod errors;
 mod features;
 mod service;
 
