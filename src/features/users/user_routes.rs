@@ -1,15 +1,9 @@
-use aide::{
-    axum::{
-        routing::{get_with, post_with},
-        ApiRouter, IntoApiResponse,
-    },
-    transform::TransformOperation,
-};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
+    routing::{get, post},
+    Json, Router,
 };
 use serde_json::json;
 
@@ -26,7 +20,7 @@ impl IntoResponse for UserServiceError {
             UserServiceError::UserNotFound(_) => StatusCode::NOT_FOUND,
             UserServiceError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             UserServiceError::LockPoisoned => StatusCode::INTERNAL_SERVER_ERROR,
-            UserServiceError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            UserServiceError::DatabaseError(_) => StatusCode::BAD_REQUEST,
         };
 
         let body = axum::Json(serde_json::json!({ "error": self.to_string() }));
@@ -34,30 +28,22 @@ impl IntoResponse for UserServiceError {
     }
 }
 
-pub fn routes(state: ApplicationState) -> ApiRouter {
+pub fn routes(state: ApplicationState) -> Router {
     let user_service = match state.service_provider.get_service("UserService") {
         Some(ServiceType::UserService(user_service)) => user_service,
         None => panic!("UserService not found in ServiceProvider"),
     };
 
-    ApiRouter::new()
-        .api_route(
-            "/",
-            post_with(handle_create_user, handle_create_user_docs)
-                .get_with(handle_list_users, handle_list_users_docs),
-        )
-        .api_route(
-            "/:id",
-            get_with(handle_read_user, handle_read_user_docs)
-                .delete_with(handle_delete_user, handle_delete_user_docs),
-        )
+    Router::new()
+        .route("/", post(handle_create_user).get(handle_list_users))
+        .route("/:id", get(handle_read_user).delete(handle_delete_user))
         .with_state(user_service)
 }
 
 async fn handle_create_user(
     State(service): State<UserService>,
     Json(user_dto): Json<UserCreateDto>,
-) -> impl IntoApiResponse {
+) -> impl IntoResponse {
     let hashed_password = match crypto_utils::hash_password(&user_dto.password) {
         Ok(hash) => hash,
         Err(_) => {
@@ -82,12 +68,7 @@ async fn handle_create_user(
     }
 }
 
-fn handle_create_user_docs(op: TransformOperation) -> TransformOperation {
-    op.description("Create a new User.")
-        .response::<201, Json<UserDto>>()
-}
-
-async fn handle_list_users(State(service): State<UserService>) -> impl IntoApiResponse {
+async fn handle_list_users(State(service): State<UserService>) -> impl IntoResponse {
     match service.list_users().await {
         Ok(users) => {
             let user_dtos: Vec<UserDto> = users.into_iter().map(get_user_dto).collect();
@@ -97,39 +78,24 @@ async fn handle_list_users(State(service): State<UserService>) -> impl IntoApiRe
     }
 }
 
-fn handle_list_users_docs(op: TransformOperation) -> TransformOperation {
-    op.description("List User(s).")
-        .response::<200, Json<Vec<UserDto>>>()
-}
-
 async fn handle_read_user(
     State(service): State<UserService>,
     Path(id): Path<u64>,
-) -> impl IntoApiResponse {
+) -> impl IntoResponse {
     match service.read_user(id).await {
         Ok(user) => Json(user).into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
-fn handle_read_user_docs(op: TransformOperation) -> TransformOperation {
-    op.description("Read the specified User.")
-        .response::<200, Json<Vec<UserDto>>>()
-}
-
 async fn handle_delete_user(
     State(service): State<UserService>,
     Path(id): Path<u64>,
-) -> impl IntoApiResponse {
+) -> impl IntoResponse {
     match service.delete_user(id).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
-}
-
-fn handle_delete_user_docs(op: TransformOperation) -> TransformOperation {
-    op.description("Delete the specified User.")
-        .response::<204, Json<Vec<UserDto>>>()
 }
 
 pub mod crypto_utils {
