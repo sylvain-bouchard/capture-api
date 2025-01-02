@@ -1,15 +1,16 @@
-use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, Set};
+use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::service::Service;
 
-use super::{user_entity::User, user_record::ActiveModel};
+use super::{user_entity::User, user_record::ActiveModel, user_record::Entity as UserRecord};
 
 #[derive(Debug, Error)]
 pub enum UserServiceError {
     #[error("User not found with id {0}")]
-    UserNotFound(u64),
+    UserNotFound(Uuid),
     #[allow(dead_code)]
     #[error("Internal server error")]
     InternalServerError,
@@ -41,7 +42,7 @@ impl UserService {
         }
     }
 
-    pub async fn create_db_user(&self, user: User) -> Result<User, UserServiceError> {
+    pub async fn create_user(&self, user: User) -> Result<User, UserServiceError> {
         if let Some(conn) = &self.connection {
             let new_user = ActiveModel {
                 id: Set(user.id),
@@ -66,15 +67,21 @@ impl UserService {
         }
     }
 
-    pub async fn read_user(&self, id: u64) -> Result<User, UserServiceError> {
-        let store = self
-            .user_store
-            .lock()
-            .map_err(|_| UserServiceError::LockPoisoned)?;
-
-        match store.get(id as usize) {
-            Some(user) => Ok(user.clone()),
-            None => Err(UserServiceError::UserNotFound(id)),
+    pub async fn read_user(&self, id: Uuid) -> Result<User, UserServiceError> {
+        if let Some(conn) = &self.connection {
+            match UserRecord::find_by_id(id).one(conn.as_ref()).await {
+                Ok(user) => match user {
+                    Some(user) => Ok(User {
+                        id: user.id,
+                        username: user.username,
+                        password_hash: user.password_hash,
+                    }),
+                    None => Err(UserServiceError::UserNotFound(id)),
+                },
+                Err(err) => Err(UserServiceError::DatabaseError(err.to_string())),
+            }
+        } else {
+            Err(UserServiceError::InternalServerError)
         }
     }
 
@@ -86,16 +93,7 @@ impl UserService {
         Ok(users)
     }
 
-    pub async fn delete_user(&self, id: u64) -> Result<User, UserServiceError> {
-        let mut store = self
-            .user_store
-            .lock()
-            .map_err(|_| UserServiceError::LockPoisoned)?;
-
-        if (id as usize) < store.len() {
-            Ok(store.remove(id as usize)) // Remove the user and return it
-        } else {
-            Err(UserServiceError::UserNotFound(id))
-        }
+    pub async fn delete_user(&self, id: Uuid) -> Result<User, UserServiceError> {
+        Err(UserServiceError::UserNotFound(id))
     }
 }

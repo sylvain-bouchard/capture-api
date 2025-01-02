@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use uuid::Uuid;
 
 use crate::{application::ApplicationState, service::ServiceType};
 
@@ -47,10 +48,10 @@ async fn handle_create_user(
         .map_err(|_| UserServiceError::InternalServerError)?;
 
     let created_user = service
-        .create_db_user(get_user_from_dto(user_dto, hashed_password))
+        .create_user(get_user_from_dto(user_dto, hashed_password))
         .await?;
-
     let user_dto = get_user_dto(created_user);
+
     Ok((StatusCode::CREATED, Json(user_dto)))
 }
 
@@ -66,17 +67,17 @@ async fn handle_list_users(State(service): State<UserService>) -> impl IntoRespo
 
 async fn handle_read_user(
     State(service): State<UserService>,
-    Path(id): Path<u64>,
-) -> impl IntoResponse {
-    match service.read_user(id).await {
-        Ok(user) => Json(user).into_response(),
-        Err(_) => StatusCode::NOT_FOUND.into_response(),
-    }
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, UserServiceError> {
+    let user = service.read_user(id).await?;
+    let user_dto = get_user_dto(user);
+
+    Ok((StatusCode::OK, Json(user_dto)))
 }
 
 async fn handle_delete_user(
     State(service): State<UserService>,
-    Path(id): Path<u64>,
+    Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
     match service.delete_user(id).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
