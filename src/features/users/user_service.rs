@@ -1,5 +1,5 @@
 use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -22,7 +22,6 @@ pub enum UserServiceError {
 pub struct UserService {
     pub name: String,
     connection: Option<Arc<DatabaseConnection>>,
-    user_store: Arc<Mutex<Vec<User>>>,
 }
 
 impl Service for UserService {
@@ -36,7 +35,6 @@ impl UserService {
         Self {
             name: String::from("UserService"),
             connection,
-            user_store: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -66,27 +64,45 @@ impl UserService {
     }
 
     pub async fn read_user(&self, id: Uuid) -> Result<User, UserServiceError> {
-        if let Some(conn) = &self.connection {
-            match UserRecord::find_by_id(id).one(conn.as_ref()).await {
-                Ok(user) => match user {
-                    Some(user) => Ok(User {
-                        id: user.id,
-                        username: user.username,
-                        password_hash: user.password_hash,
-                    }),
-                    None => Err(UserServiceError::UserNotFound(id)),
-                },
-                Err(err) => Err(UserServiceError::DatabaseError(err.to_string())),
-            }
-        } else {
-            Err(UserServiceError::InternalServerError)
-        }
+        let connection = self
+            .connection
+            .as_ref()
+            .ok_or(UserServiceError::InternalServerError)?;
+
+        let user_record = UserRecord::find()
+            .one(connection.as_ref())
+            .await
+            .map_err(|err| UserServiceError::DatabaseError(err.to_string()))?
+            .ok_or(UserServiceError::UserNotFound(id))?;
+
+        let user = User {
+            id: user_record.id,
+            username: user_record.username,
+            password_hash: user_record.password_hash,
+        };
+
+        Ok(user)
     }
 
     pub async fn list_users(&self) -> Result<Vec<User>, UserServiceError> {
-        let store = self.user_store.lock().unwrap();
+        let connection = self
+            .connection
+            .as_ref()
+            .ok_or(UserServiceError::InternalServerError)?;
 
-        let users = store.iter().cloned().collect();
+        let user_records = UserRecord::find()
+            .all(connection.as_ref())
+            .await
+            .map_err(|err| UserServiceError::DatabaseError(err.to_string()))?;
+
+        let users = user_records
+            .into_iter() // Consume the records directly, no need for `iter()`
+            .map(|user| User {
+                id: user.id,
+                username: user.username,
+                password_hash: user.password_hash,
+            })
+            .collect();
 
         Ok(users)
     }
