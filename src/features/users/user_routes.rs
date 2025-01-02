@@ -19,7 +19,6 @@ impl IntoResponse for UserServiceError {
         let status_code = match self {
             UserServiceError::UserNotFound(_) => StatusCode::NOT_FOUND,
             UserServiceError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            UserServiceError::LockPoisoned => StatusCode::INTERNAL_SERVER_ERROR,
             UserServiceError::DatabaseError(_) => StatusCode::BAD_REQUEST,
         };
 
