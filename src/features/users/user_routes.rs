@@ -5,7 +5,6 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde_json::json;
 
 use crate::{application::ApplicationState, service::ServiceType};
 
@@ -43,29 +42,16 @@ pub fn routes(state: ApplicationState) -> Router {
 async fn handle_create_user(
     State(service): State<UserService>,
     Json(user_dto): Json<UserCreateDto>,
-) -> impl IntoResponse {
-    let hashed_password = match crypto_utils::hash_password(&user_dto.password) {
-        Ok(hash) => hash,
-        Err(_) => {
-            eprintln!("Error hashing password");
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": "Invalid input", "message": "Password hashing failed" })),
-            )
-                .into_response();
-        }
-    };
+) -> Result<impl IntoResponse, UserServiceError> {
+    let hashed_password = crypto_utils::hash_password(&user_dto.password)
+        .map_err(|_| UserServiceError::InternalServerError)?;
 
-    match service
+    let created_user = service
         .create_db_user(get_user_from_dto(user_dto, hashed_password))
-        .await
-    {
-        Ok(created_user) => {
-            let user_dto = get_user_dto(created_user);
-            (StatusCode::CREATED, Json(user_dto)).into_response()
-        }
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
+        .await?;
+
+    let user_dto = get_user_dto(created_user);
+    Ok((StatusCode::CREATED, Json(user_dto)))
 }
 
 async fn handle_list_users(State(service): State<UserService>) -> impl IntoResponse {
