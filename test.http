@@ -12,7 +12,7 @@ content-type: application/json
 
 ###
 
-GET {{host}}/api/users/4 HTTP/1.1
+GET {{host}}/api/users/37b2e3a1-8446-47e4-89ec-1d36e5b351fd HTTP/1.1
 content-type: text/plain; charset=utf-8
 
 ###
