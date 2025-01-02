@@ -9,13 +9,11 @@ use super::{user_entity::User, user_record::ActiveModel, user_record::Entity as 
 
 #[derive(Debug, Error)]
 pub enum UserServiceError {
-    #[error("User not found with id {0}")]
+    #[error("User with id {0} not found")]
     UserNotFound(Uuid),
     #[allow(dead_code)]
     #[error("Internal server error")]
     InternalServerError,
-    #[error("Lock poisoned")]
-    LockPoisoned,
     #[error("Database error: {0}")]
     DatabaseError(String),
 }
